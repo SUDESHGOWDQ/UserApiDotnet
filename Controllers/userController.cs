@@ -1,19 +1,18 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Data;
 using WebApplication1.Model.Dto;
 using WebApplication1.Model.Entity;
 
-
 namespace WebApplication1.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class userController : ControllerBase
+    public class UsersController : ControllerBase
     {
         private AppDbContext dbContext;
 
-        public userController(AppDbContext dbContext)
+        public UsersController(AppDbContext dbContext)
         {
             this.dbContext = dbContext;
         }
@@ -29,8 +28,16 @@ namespace WebApplication1.Controllers
             return Ok(users);
         }
 
-        [HttpPost]
+        [HttpGet("{id}")]
+        public IActionResult GetUser(int id)
+        {
+            var user = dbContext.Users.Find(id);
+            if (user == null)
+                return NotFound($"User with ID {id} not found.");
+            return Ok(user);
+        }
 
+        [HttpPost]
         public IActionResult CreateUser(AddUserDto adduserDto)
         {
             if (adduserDto == null) return BadRequest();
@@ -45,8 +52,7 @@ namespace WebApplication1.Controllers
             dbContext.Users.Add(newUser);
             dbContext.SaveChanges();
 
-            return CreatedAtAction(nameof(GetUsers), null, newUser);
-
+            return CreatedAtAction(nameof(GetUser), new { id = newUser.Id }, newUser);
         }
 
         [HttpPut("{id}")]
@@ -65,7 +71,8 @@ namespace WebApplication1.Controllers
         }
 
         [HttpDelete("{id}")]
-        public IActionResult DeleteUser(int id) { 
+        public IActionResult DeleteUser(int id)
+        {
             var existingUser = dbContext.Users.Find(id);
             if (existingUser == null)
             {
@@ -83,11 +90,10 @@ namespace WebApplication1.Controllers
                 return BadRequest("Search keyword is required.");
 
             var users = dbContext.Users
-                .Where(u => u.Name.Contains(keyword) || u.Email.Contains(keyword))
+                .Where(item => item.Name.Contains(keyword) || item.Email.Contains(keyword))
                 .ToList();
 
             return Ok(users);
         }
-
     }
 }
